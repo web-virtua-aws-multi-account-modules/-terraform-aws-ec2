@@ -275,6 +275,10 @@ variable "ephemeral_block_device" {
 | [aws_eip_association.create_association_ip](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip_association) | resource |
 | [aws_instance.create_ec2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance) | resource |
 | [aws_spot_instance_request.create_ec2_spot](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/spot_instance_request) | resource |
+| [aws_iam_policy.create_ec2_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy) | resource |
+| [aws_iam_role.create_ec2_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_policy_attachment.create_ec2_attachment_policy_role](https://registry.terraform.io/providers/hashicorp/aws/3.29.1/docs/resources/iam_policy_attachment) | resource |
+| [aws_iam_instance_profile.create_ec2_profile](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 
 ## Outputs
 
