@@ -45,6 +45,7 @@ provider "aws" {
 - Elastic IP
 - Policy and role
 - Creation of instances of types On Demand and SPOT
+- Snapshot life cycle
 
 ## Usage exemples
 
@@ -123,6 +124,56 @@ module "vm_test" {
 }
 ```
 
+### Create on demand EC2 instance with basic configuration, EBS volume, SSH access and snapshot lifecycle
+
+```hcl
+module "vm_test" {
+  source                = "web-virtua-aws-multi-account-modules/ec2/aws"
+  name                  = "tf-vm-test"
+  ami                   = data.aws_ami.ubuntu_ami.id
+  instance_type         = "t3a_small"
+  key_pair_name         = "key-pair-east-1"
+  subnet_id             = "subnet-0eff3...bde8"
+  ebs_block_device      = var.ebs_block_device
+
+  vpc_security_group_ids = [
+    "sg-018620a...764c"
+  ]
+
+  ### snapshot lifecycle ###
+  snapshot_role_name = "tf-snapshot-lifecycle"
+
+  snapshots_lifecycle = [
+    {
+      name           = "tf-snapshot-lifecycle-test-1"
+      description    = "Snapshot test"
+      retention_time = 7
+      times          = "09:40"
+      interval       = 1
+
+      target_tags = {
+        Name = "tf-cte-api"
+      }
+    },
+    {
+      name           = "tf-snapshot-lifecycle-test-2"
+      description    = "Snapshot test"
+      retention_time = 7
+      times          = "06:40"
+      interval       = 1
+
+      target_tags = {
+        Name = "tf-cte-api"
+      }
+    }
+  ]
+
+  providers = {
+    aws = aws.alias_profile_b
+  }
+}
+```
+
 ## Variables
 
 | Name | Type | Default | Required | Description | Options |
@@ -169,6 +220,12 @@ module "vm_test" {
 | ebs_block_device | `list(object)` | `-` | no | Define the EBS volume configurations to instance | `-` |
 | root_block_device | `list(object)` | `-` | no | Define the ROOT volume configurations to instance | `-` |
 | ephemeral_block_device | `list(object)` | `-` | no | Define the ephemeral volume configurations to instance, the virtual_name should be have the patter ephemeral<NUMBER>, if any volume cofigured a default volume will be making | `-` |
+| snapshot_assume_role_arn | `string` | `null` | no | If defined will not be created a new assume role, else will be used this role ARN, for use a ARN existing not must be defined role_name variable | `-` |
+| aws_account | `string` | `*` | no | If defined the permissions will be to this accont, else for any | `-` |
+| snapshot_role_name | `string` | `null` | no | If defined will be create a new role with this name | `-` |
+| snapshots_lifecycle | `list(object)` | `-` | yes | List with snapshots lifecycle, resource_types variable can be VOLUME or INSTANCE, policy_type variable can be EBS_SNAPSHOT_MANAGEMENT, IMAGE_MANAGEMENT or EVENT_BASED_POLICY and state varible can be ENABLED or DESABLED | `-` |
+| dlm_lifecycle_assume_role_policy | `any` | `object` | no | Policy to DLM  assume role | `-` |
+| dlm_snapshot_lifecycle_policy | `any` | `object` | no | Policy to DLM life cycle | `-` |
 
 * Model of variable ec2_permission_policy
 ```hcl
@@ -267,6 +324,93 @@ variable "ephemeral_block_device" {
 }
 ```
 
+* Model of variable snapshots_lifecycle
+```hcl
+variable "snapshots_lifecycle" {
+  description = "List with snapshots lifecycle, resource_types variable can be VOLUME or INSTANCE, policy_type variable can be EBS_SNAPSHOT_MANAGEMENT, IMAGE_MANAGEMENT or EVENT_BASED_POLICY and state varible can be ENABLED or DESABLED"
+  type = list(object({
+    name           = string
+    target_tags    = any
+    description    = optional(string)
+    state          = optional(string, "ENABLED")
+    resource_types = optional(list(string), ["VOLUME"])
+    interval       = optional(number, 24)
+    interval_unit  = optional(string, "HOURS")
+    times          = optional(string, "00:01")
+    retention_time = optional(number, 7)
+    copy_tags      = optional(bool, false)
+    policy_type    = optional(string, "EBS_SNAPSHOT_MANAGEMENT")
+    tags           = optional(any, {})
+  }))
+  default = [
+    {
+      name           = "tf-snapshot-lifecycle-test-1"
+      description    = "Snapshot test"
+      retention_time = 7
+      times          = "14:45"
+      interval       = 1
+
+      target_tags = {
+        Name = "tf-test-api"
+      }
+    }
+  ]
+}
+```
+
+* Default value of variable dlm_lifecycle_assume_role_policy
+```hcl
+variable "dlm_lifecycle_assume_role_policy" {
+  description = "Policy to DLM  assume role"
+  type        = any
+  default = {
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Action" : "sts:AssumeRole",
+        "Principal" : {
+          "Service" : "dlm.amazonaws.com"
+        },
+        "Effect" : "Allow",
+        "Sid" : ""
+      }
+    ]
+  }
+}
+```
+
+* Default value of variable dlm_snapshot_lifecycle_policy
+```hcl
+variable "dlm_snapshot_lifecycle_policy" {
+  description = "Policy to DLM life cycle"
+  type        = any
+  default = {
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateSnapshot",
+          "ec2:CreateSnapshots",
+          "ec2:DeleteSnapshot",
+          "ec2:DescribeInstances",
+          "ec2:DescribeVolumes",
+          "ec2:DescribeSnapshots"
+        ],
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateTags"
+        ],
+        "Resource" : "arn:aws:ec2:*::snapshot/*"
+      }
+    ]
+  }
+}
+```
+
 ## Resources
 
 | Name | Type |
@@ -279,6 +423,9 @@ variable "ephemeral_block_device" {
 | [aws_iam_role.create_ec2_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_policy_attachment.create_ec2_attachment_policy_role](https://registry.terraform.io/providers/hashicorp/aws/3.29.1/docs/resources/iam_policy_attachment) | resource |
 | [aws_iam_instance_profile.create_ec2_profile](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
+| [aws_iam_role.create_dlm_lifecycle_assume_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
+| [aws_iam_role_policy.create_dlm_snapshot_lifecycle_role](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_dlm_lifecycle_policy.create_dlm_schedules_lifecycle](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/dlm_lifecycle_policy) | resource |
 
 ## Outputs
 
@@ -297,3 +444,7 @@ variable "ephemeral_block_device" {
 | `public_ip` | The public IP address assigned to the instance, if applicable |
 | `private_ip` | The private IP address assigned to the instance |
 | `ec2_instance_id` | The Instance ID |
+| `schedules_lifecycle` | DLM schedules lifecycle |
+| `lifecycle_assume_role` | DLM lifecycle assume role |
+| `snapshot_lifecycle_role` | DLM snapshot lifecycle role |
+
