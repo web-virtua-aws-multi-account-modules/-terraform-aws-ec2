@@ -96,7 +96,7 @@ output "ec2_profile" {
 #######################################
 output "schedules_lifecycle" {
   description = "DLM schedules lifecycle"
-  value       = aws_dlm_lifecycle_policy.create_dlm_schedules_lifecycle
+  value       = try(aws_dlm_lifecycle_policy.create_dlm_schedules_lifecycle, null)
 }
 
 output "lifecycle_assume_role" {
