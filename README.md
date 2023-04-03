@@ -223,7 +223,7 @@ module "vm_test" {
 | snapshot_assume_role_arn | `string` | `null` | no | If defined will not be created a new assume role, else will be used this role ARN, for use a ARN existing not must be defined role_name variable | `-` |
 | aws_account | `string` | `*` | no | If defined the permissions will be to this accont, else for any | `-` |
 | snapshot_role_name | `string` | `null` | no | If defined will be create a new role with this name | `-` |
-| snapshots_lifecycle | `list(object)` | `-` | yes | List with snapshots lifecycle, resource_types variable can be VOLUME or INSTANCE, policy_type variable can be EBS_SNAPSHOT_MANAGEMENT, IMAGE_MANAGEMENT or EVENT_BASED_POLICY and state varible can be ENABLED or DESABLED | `-` |
+| snapshots_lifecycle | `list(object)` | `null` | no | List with snapshots lifecycle, resource_types variable can be VOLUME or INSTANCE, policy_type variable can be EBS_SNAPSHOT_MANAGEMENT, IMAGE_MANAGEMENT or EVENT_BASED_POLICY and state varible can be ENABLED or DESABLED | `-` |
 | dlm_lifecycle_assume_role_policy | `any` | `object` | no | Policy to DLM  assume role | `-` |
 | dlm_snapshot_lifecycle_policy | `any` | `object` | no | Policy to DLM life cycle | `-` |
 
