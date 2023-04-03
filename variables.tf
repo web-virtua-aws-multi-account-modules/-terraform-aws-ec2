@@ -329,7 +329,7 @@ variable "snapshots_lifecycle" {
     policy_type    = optional(string, "EBS_SNAPSHOT_MANAGEMENT")
     tags           = optional(any, {})
   }))
-  default = null
+  default = []
 }
 
 variable "dlm_lifecycle_assume_role_policy" {

@@ -38,7 +38,7 @@ resource "aws_iam_role_policy" "create_dlm_snapshot_lifecycle_role" {
 }
 
 resource "aws_dlm_lifecycle_policy" "create_dlm_schedules_lifecycle" {
-  count = var.snapshots_lifecycle != null ? length(var.snapshots_lifecycle) : 0
+  count = length(var.snapshots_lifecycle)
 
   description        = var.snapshots_lifecycle[count.index].description != null ? var.snapshots_lifecycle[count.index].description : "Snapshot life cycle ${var.snapshots_lifecycle[count.index].name}"
   execution_role_arn = try(aws_iam_role.create_dlm_lifecycle_assume_role[0].arn, var.snapshot_assume_role_arn)
