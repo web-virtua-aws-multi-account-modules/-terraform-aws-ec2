@@ -22,7 +22,15 @@ resource "aws_iam_role_policy" "create_dlm_snapshot_lifecycle_role" {
           "ec2:DeleteSnapshot",
           "ec2:DescribeInstances",
           "ec2:DescribeVolumes",
-          "ec2:DescribeSnapshots"
+          "ec2:DescribeSnapshots",
+          "ec2:EnableFastSnapshotRestores",
+          "ec2:DescribeFastSnapshotRestores",
+          "ec2:DisableFastSnapshotRestores",
+          "ec2:CopySnapshot",
+          "ec2:ModifySnapshotAttribute",
+          "ec2:DescribeSnapshotAttribute",
+          "ec2:DescribeSnapshotTierStatus",
+          "ec2:ModifySnapshotTier"
         ],
         "Resource" : "*"
       },
@@ -32,7 +40,22 @@ resource "aws_iam_role_policy" "create_dlm_snapshot_lifecycle_role" {
           "ec2:CreateTags"
         ],
         "Resource" : "arn:aws:ec2:${var.aws_account}::snapshot/*"
-      }
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateTags",
+          "events:PutRule",
+          "events:DeleteRule",
+          "events:DescribeRule",
+          "events:EnableRule",
+          "events:DisableRule",
+          "events:ListTargetsByRule",
+          "events:PutTargets",
+          "events:RemoveTargets"
+        ],
+        "Resource" : "arn:aws:events:*:*:rule/AwsDataLifecycleRule.managed-cwe.*"
+      },
     ]
   } : var.dlm_snapshot_lifecycle_policy)
 }
